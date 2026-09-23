@@ -1,9 +1,6 @@
 name: Deploy ARTIFACTA preview
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
