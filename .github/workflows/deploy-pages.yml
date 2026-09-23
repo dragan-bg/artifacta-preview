@@ -26,10 +26,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Install ffmpeg
+      - name: Install video tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg
+          sudo apt-get install -y ffmpeg python3-opencv python3-numpy
 
       - name: Mirror clean Axial demo
         run: |
@@ -44,7 +44,125 @@ jobs:
           mkdir -p site/images/agency site/videos
           base64 -d hero/artifacta_hero_source.jpg.b64 > site/images/agency/artifacta-hero-source.jpg
 
-          ffmpeg -y -loop 1             -i site/images/agency/artifacta-hero-source.jpg             -vf "scale=2560:1440:flags=lanczos,zoompan=z='1+0.00032*on':x='iw/2-(iw/zoom/2)+12*sin(on/30)':y='ih/2-(ih/zoom/2)+6*cos(on/38)':d=240:s=1920x1080:fps=24,eq=brightness=-0.03:contrast=1.08:saturation=0.88,vignette=PI/5"             -t 10             -an             -c:v libx264             -preset medium             -crf 23             -pix_fmt yuv420p             -movflags +faststart             site/videos/artifacta-hero.mp4
+          cat > /tmp/make_artifacta_hero.py <<'PY'
+          import cv2, numpy as np, math, subprocess
+          from pathlib import Path
+
+          src = Path("site/images/agency/artifacta-hero-source.jpg")
+          out = Path("site/videos/artifacta-hero.mp4")
+          W, H = 1600, 900
+          fps = 24
+          duration = 10
+          N = fps * duration
+
+          img = cv2.imread(str(src), cv2.IMREAD_COLOR)
+          if img is None:
+              raise SystemExit(f"Cannot read {src}")
+
+          ih, iw = img.shape[:2]
+          base_scale = max(W / iw, H / ih) * 1.07
+          base = cv2.resize(
+              img,
+              (int(iw * base_scale), int(ih * base_scale)),
+              interpolation=cv2.INTER_LANCZOS4,
+          )
+          bh, bw = base.shape[:2]
+
+          xx = np.linspace(-1, 1, W, dtype=np.float32)
+          yy = np.linspace(-1, 1, H, dtype=np.float32)
+          X, Y = np.meshgrid(xx, yy)
+          r = np.sqrt((X * 0.92) ** 2 + (Y * 1.05) ** 2)
+          vig = np.clip(
+              1.04 - 0.23 * np.clip((r - 0.35) / 0.95, 0, 1),
+              0.78,
+              1.04,
+          ).astype(np.float32)
+
+          GX, GY = np.meshgrid(
+              np.arange(W, dtype=np.float32),
+              np.arange(H, dtype=np.float32),
+          )
+
+          cmd = [
+              "ffmpeg", "-y", "-loglevel", "error",
+              "-f", "rawvideo", "-vcodec", "rawvideo",
+              "-pix_fmt", "bgr24",
+              "-s", f"{W}x{H}",
+              "-r", str(fps),
+              "-i", "-",
+              "-an",
+              "-c:v", "libx264",
+              "-preset", "slow",
+              "-crf", "18",
+              "-pix_fmt", "yuv420p",
+              "-movflags", "+faststart",
+              str(out),
+          ]
+          proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+
+          for i in range(N):
+              p = i / N
+              phase = 2 * math.pi * p
+
+              # This is the same movement used for the downloaded V1 video.
+              z = 1.0 + 0.035 * (1 - math.cos(phase)) / 2
+              dx = 34 * math.sin(phase)
+              dy = 16 * math.sin(phase + math.pi / 2)
+
+              cw = int(W / z)
+              ch = int(H / z)
+              cx = bw / 2 + dx
+              cy = bh / 2 + dy
+              x0 = int(round(cx - cw / 2))
+              y0 = int(round(cy - ch / 2))
+              x0 = max(0, min(x0, bw - cw))
+              y0 = max(0, min(y0, bh - ch))
+              crop = base[y0:y0 + ch, x0:x0 + cw]
+              frame = cv2.resize(
+                  crop, (W, H), interpolation=cv2.INTER_CUBIC
+              ).astype(np.float32) / 255.0
+
+              center = W * 0.50 + W * 0.72 * math.sin(phase - math.pi / 2)
+              diagonal = GX + 0.42 * GY
+              sigma = 135.0
+              mask = np.exp(
+                  -0.5 * ((diagonal - center) / sigma) ** 2
+              ).astype(np.float32)
+              strength = 0.13 * (
+                  0.72 + 0.28 * math.sin(phase + 0.3) ** 2
+              )
+              warm = np.zeros_like(frame)
+              warm[:, :, 0] = 0.18
+              warm[:, :, 1] = 0.48
+              warm[:, :, 2] = 1.00
+              frame = np.clip(
+                  frame + mask[..., None] * warm * strength,
+                  0,
+                  1,
+              )
+
+              exposure = 1.0 + 0.018 * math.sin(phase + 1.0)
+              frame = np.clip(frame * exposure, 0, 1)
+              frame *= vig[..., None]
+
+              rng = np.random.default_rng(i + 1234)
+              grain = rng.normal(
+                  0, 0.0042, (H, W, 1)
+              ).astype(np.float32)
+              frame = np.clip(frame + grain, 0, 1)
+
+              proc.stdin.write(
+                  (frame * 255).astype(np.uint8).tobytes()
+              )
+
+          proc.stdin.close()
+          ret = proc.wait()
+          if ret != 0:
+              raise SystemExit(f"ffmpeg failed {ret}")
+          PY
+
+          python3 /tmp/make_artifacta_hero.py
+          ffprobe -v error -show_entries stream=codec_name,width,height,r_frame_rate:format=duration,size,bit_rate -of default=nw=1 site/videos/artifacta-hero.mp4
 
       - name: Replace Axial hero with ARTIFACTA hero
         run: |
