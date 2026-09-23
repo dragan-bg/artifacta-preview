@@ -50,17 +50,36 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
 
-          old_video = "https://axial-theme.pages.dev/videos/agency-hero-motion-v3.mp4"
           new_video = "/artifacta-preview/videos/artifacta-hero.mp4"
-          old_poster = "https://axial-theme.pages.dev/images/agency/hero-studio.webp"
           new_poster = "/artifacta-preview/images/agency/artifacta-hero-source.jpg"
 
+          replacements = 0
           for path in Path("site").rglob("*.html"):
               text = path.read_text(encoding="utf-8", errors="ignore")
-              text = text.replace(old_video, new_video)
-              text = text.replace(old_poster, new_poster)
-              path.write_text(text, encoding="utf-8")
+              original = text
+
+              # wget converts the original absolute Axial asset URLs into local
+              # relative paths, so replace by filename rather than exact URL.
+              text = re.sub(
+                  r'[^"\']*agency-hero-motion-v3\.mp4',
+                  new_video,
+                  text,
+              )
+              text = re.sub(
+                  r'[^"\']*hero-studio\.webp',
+                  new_poster,
+                  text,
+              )
+
+              if text != original:
+                  replacements += 1
+                  path.write_text(text, encoding="utf-8")
+
+          print(f"Updated hero assets in {replacements} HTML file(s)")
+          if replacements == 0:
+              raise SystemExit("No Axial hero asset references were found")
           PY
 
       - name: Verify preview
