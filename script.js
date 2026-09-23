@@ -38,27 +38,9 @@ if (!reduceMotion) {
   });
 
   heroTl
-    .to('[data-frame="a"]', { xPercent: -24, yPercent: 10, scale: 0.72, ease: 'none' }, 0)
-    .to('[data-frame="b"]', { xPercent: 0, yPercent: -6, scale: 0.58, ease: 'none' }, 0)
-    .to('[data-frame="c"]', { xPercent: 27, yPercent: 12, scale: 0.72, ease: 'none' }, 0)
     .to('[data-hero-title]', { scale: 1.18, yPercent: -6, ease: 'none' }, 0)
     .to('.hero-intro', { opacity: 0.15, y: 35, ease: 'none' }, 0.15)
     .to('.hero-bottom', { opacity: 0, ease: 'none' }, 0.45);
-
-  gsap.from('[data-frame="a"], [data-frame="c"]', {
-    opacity: 0,
-    y: 50,
-    duration: 1,
-    stagger: 0.12,
-    ease: 'power3.out'
-  });
-
-  gsap.from('[data-frame="b"]', {
-    opacity: 0,
-    scale: 0.75,
-    duration: 1.25,
-    ease: 'power3.out'
-  });
 
   gsap.from('.hero-title-wrap > *', {
     opacity: 0,

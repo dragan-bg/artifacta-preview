@@ -98,7 +98,30 @@ main { overflow: clip; }
   place-items: center;
   overflow: hidden;
   isolation: isolate;
+  background: #16130f;
+  color: #fff;
 }
+
+.hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -2;
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, rgba(0,0,0,.62), rgba(0,0,0,.08) 76%);
+  pointer-events: none;
+}
+
+.site-header { color: #fff; border-bottom-color: rgba(255,255,255,.3); }
+.site-header .brand span { color: rgba(255,255,255,.7); }
 
 .hero-frame {
   position: absolute;
@@ -199,12 +222,12 @@ main { overflow: clip; }
   z-index: 10;
   max-width: 76rem;
   width: 100%;
-  text-align: center;
+  text-align: left;
   pointer-events: none;
 }
 
 .hero-title-wrap h1 {
-  margin: 0 auto;
+  margin: 0;
   max-width: 10ch;
   font-family: var(--serif);
   font-size: clamp(5.2rem, 10vw, 10.5rem);
@@ -220,7 +243,7 @@ main { overflow: clip; }
 
 .hero-intro {
   max-width: 32rem;
-  margin: 2rem auto 0;
+  margin: 2rem 0 0;
   font-size: clamp(1rem,1.4vw,1.25rem);
   line-height: 1.6;
 }
@@ -235,7 +258,10 @@ main { overflow: clip; }
   color: var(--muted);
   font-size: .55rem;
   letter-spacing: .12em;
+  color: rgba(255,255,255,.8);
 }
+
+.hero .eyebrow { color: rgba(255,255,255,.8); }
 
 .studio-intro {
   display: grid;
@@ -637,6 +663,7 @@ main { overflow: clip; }
 
 @media (max-width: 650px) {
   .hero { min-height:48rem; height:100svh; }
+  .hero-video { object-position: 58% center; }
   .frame-a { left:4%; top:20%; width:46%; height:35%; }
   .frame-b { left:27%; top:19%; width:46%; height:54%; }
   .frame-c { right:4%; top:43%; width:42%; height:29%; }
