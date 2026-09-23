@@ -1,4 +1,4 @@
-name: Deploy ARTIFACTA Preview to GitHub Pages
+name: Deploy clean Axial preview
 
 on:
   push:
@@ -16,25 +16,41 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  mirror-and-deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
+      - name: Mirror clean Axial demo
+        run: |
+          rm -rf mirror site
+          mkdir -p mirror site
+          wget             --mirror             --page-requisites             --convert-links             --adjust-extension             --no-parent             --execute robots=off             --user-agent="Mozilla/5.0"             https://axial-theme.pages.dev/             -P mirror
+          cp -a mirror/axial-theme.pages.dev/. site/
+          touch site/.nojekyll
+
+      - name: Verify mirrored homepage
+        run: |
+          test -f site/index.html
+          test -d site/_astro
+          echo "Axial clean mirror ready"
+          find site -maxdepth 2 -type f | head -50
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
 
-      - name: Upload site artifact
+      - name: Upload clean Axial site
         uses: actions/upload-pages-artifact@v4
         with:
-          path: '.'
+          path: site
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
