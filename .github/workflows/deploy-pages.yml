@@ -1,4 +1,4 @@
-name: Deploy clean Axial preview
+name: Deploy ARTIFACTA preview
 
 on:
   push:
@@ -34,19 +34,43 @@ jobs:
           cp -a mirror/axial-theme.pages.dev/. site/
           touch site/.nojekyll
 
-      - name: Verify mirrored homepage
+      - name: Build ARTIFACTA hero loop
+        run: |
+          mkdir -p site/images/agency site/videos
+          base64 -d hero/artifacta_hero_source.jpg.b64 > site/images/agency/artifacta-hero-source.jpg
+
+          ffmpeg -y -loop 1             -i site/images/agency/artifacta-hero-source.jpg             -vf "scale=2560:1440:flags=lanczos,zoompan=z='1+0.00032*on':x='iw/2-(iw/zoom/2)+12*sin(on/30)':y='ih/2-(ih/zoom/2)+6*cos(on/38)':d=240:s=1920x1080:fps=24,eq=brightness=-0.03:contrast=1.08:saturation=0.88,vignette=PI/5"             -t 10             -an             -c:v libx264             -preset medium             -crf 23             -pix_fmt yuv420p             -movflags +faststart             site/videos/artifacta-hero.mp4
+
+      - name: Replace Axial hero with ARTIFACTA hero
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          old_video = "https://axial-theme.pages.dev/videos/agency-hero-motion-v3.mp4"
+          new_video = "/artifacta-preview/videos/artifacta-hero.mp4"
+          old_poster = "https://axial-theme.pages.dev/images/agency/hero-studio.webp"
+          new_poster = "/artifacta-preview/images/agency/artifacta-hero-source.jpg"
+
+          for path in Path("site").rglob("*.html"):
+              text = path.read_text(encoding="utf-8", errors="ignore")
+              text = text.replace(old_video, new_video)
+              text = text.replace(old_poster, new_poster)
+              path.write_text(text, encoding="utf-8")
+          PY
+
+      - name: Verify preview
         run: |
           test -f site/index.html
-          test -d site/_astro
-          echo "Axial clean mirror ready"
-          find site -maxdepth 2 -type f | head -50
+          test -f site/videos/artifacta-hero.mp4
+          grep -q "artifacta-hero.mp4" site/index.html
+          echo "ARTIFACTA hero replacement ready"
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
 
-      - name: Upload clean Axial site
+      - name: Upload site
         uses: actions/upload-pages-artifact@v4
         with:
           path: site
