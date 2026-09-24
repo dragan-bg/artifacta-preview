@@ -39,7 +39,7 @@ opening = m.group(1).replace(
 card = m.group(2)
 card = card.replace(
     'src="images/agency/work-brand-system.webp"',
-    'src="images/agency/low-risk-retail-hero.webp"'
+    'src="images/agency/retail-concepts-hero.webp"'
 )
 card = card.replace(
     'alt="Minimal brand system arranged on a warm editorial surface"',
@@ -60,13 +60,13 @@ text = text.replace("Brand Strategy - Axial", TITLE + " - Axial")
 text = text.replace(SEO_OLD, SEO_NEW)
 text = text.replace(
     "https://example.com/images/agency/work-brand-system.webp",
-    "https://dragan-bg.github.io/artifacta-preview/images/agency/low-risk-retail-hero.webp"
+    "https://dragan-bg.github.io/artifacta-preview/images/agency/retail-concepts-hero.webp"
 )
 
 # Hero visual
 text = text.replace(
     'src="../images/agency/work-brand-system.webp"',
-    'src="../images/agency/low-risk-retail-hero.webp"',
+    'src="../images/agency/retail-concepts-hero.webp"',
     1
 )
 text = text.replace(
@@ -97,7 +97,7 @@ text = text.replace(HERO_OLD, HERO_NEW)
 text = text.replace(OVERVIEW_OLD, OVERVIEW_NEW)
 text = text.replace(
     'src="../images/agency/journal-clarity.webp"',
-    'src="../images/agency/low-risk-retail-overview.webp"',
+    'src="../images/agency/retail-concepts-overview.webp"',
     1
 )
 text = text.replace(
@@ -184,8 +184,8 @@ detail = path.read_text(encoding="utf-8")
 checks = [
     ("listing title", "Retail Concepts &amp; Impulse Design" in listing),
     ("detail title", 'aria-label="Retail Concepts &amp; Impulse Design"' in detail),
-    ("hero asset", "low-risk-retail-hero.webp" in detail),
-    ("overview asset", "low-risk-retail-overview.webp" in detail),
+    ("hero asset", "retail-concepts-hero.webp" in detail),
+    ("overview asset", "retail-concepts-overview.webp" in detail),
     ("Display Concepts", "Display Concepts" in detail),
     ("Low MOQ Collections", "Low MOQ Collections" in detail),
     ("Smart Price Architecture", "Smart Price Architecture" in detail),
