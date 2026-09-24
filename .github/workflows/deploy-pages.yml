@@ -29,15 +29,26 @@ jobs:
         run: |
           rm -rf mirror site
           mkdir -p mirror site
-          wget             --mirror             --page-requisites             --convert-links             --adjust-extension             --no-parent             --execute robots=off             --user-agent="Mozilla/5.0"             https://axial-theme.pages.dev/             -P mirror
+          wget \
+            --mirror \
+            --page-requisites \
+            --convert-links \
+            --adjust-extension \
+            --no-parent \
+            --execute robots=off \
+            --user-agent="Mozilla/5.0" \
+            https://axial-theme.pages.dev/ \
+            -P mirror
           cp -a mirror/axial-theme.pages.dev/. site/
           touch site/.nojekyll
 
-      - name: Copy original ARTIFACTA hero video
+      - name: Copy ARTIFACTA assets
         run: |
-          mkdir -p site/videos
+          mkdir -p site/videos site/images/agency
           cp videos/artifacta_hero_loop_v1.mp4 site/videos/artifacta_hero_loop_v1.mp4
+          cp custom/product-evolution.webp site/images/agency/product-evolution.webp
           cmp videos/artifacta_hero_loop_v1.mp4 site/videos/artifacta_hero_loop_v1.mp4
+          cmp custom/product-evolution.webp site/images/agency/product-evolution.webp
 
       - name: Replace Axial hero with ARTIFACTA hero
         run: |
@@ -51,15 +62,11 @@ jobs:
           for path in Path("site").rglob("*.html"):
               text = path.read_text(encoding="utf-8", errors="ignore")
               original = text
-
-              # wget converts the original absolute Axial asset URLs into local
-              # relative paths, so replace by filename rather than exact URL.
               text = re.sub(
                   r'[^"\']*agency-hero-motion-v3\.mp4',
                   new_video,
                   text,
               )
-
               if text != original:
                   replacements += 1
                   path.write_text(text, encoding="utf-8")
@@ -69,12 +76,125 @@ jobs:
               raise SystemExit("No Axial hero asset references were found")
           PY
 
+      - name: Replace Integrated Campaigns with Product Evolution
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          ROOT = Path("site")
+
+          CARD_BODY_OLD = "Distinctive ideas designed to travel without losing their edge."
+          CARD_BODY_NEW = "We take an existing museum-shop product and turn it into a stronger, more distinctive and more commercially competitive version."
+          SEO_OLD = "Campaign platforms, creative direction and channel systems for B2B launches and growth moments."
+          SEO_NEW = "Product analysis, creative upgrades, packaging, materials, production technology and cost engineering for museum-shop products."
+          HERO_OLD = "We build campaign ideas that earn attention in one moment and stay coherent across every market, format and team."
+          HERO_NEW = "Give us a product that already sells — or one you believe could sell better. We analyse what should stay, what can be improved and where new value can be created through design, materials, colour, finishes, packaging, production technology and cost engineering."
+          OVERVIEW_OLD = "A strong campaign is more than a headline. We connect the strategic proposition, creative platform, visual world and rollout system so the work can flex across channels without becoming generic."
+          OVERVIEW_NEW = "A successful product does not always need to be replaced. Sometimes it simply needs a new reason to be noticed. We start with the museum’s existing product and preserve the elements that make it recognisable, while exploring ways to increase its perceived value, shelf impact, collectibility and commercial potential. From subtle improvements to a complete product evolution, we can rethink materials, colours, surface treatments, dimensional details, packaging and manufacturing methods — always working around the museum’s target retail price, required quality and purchasing conditions. The result is not just a different-looking product. It is a more considered product proposition designed to compete better on the shelf and create more value for both the visitor and the museum."
+
+          REPLACEMENTS = {
+              "Integrated Campaigns": "Product Evolution",
+              CARD_BODY_OLD: CARD_BODY_NEW,
+              SEO_OLD: SEO_NEW,
+              HERO_OLD: HERO_NEW,
+              OVERVIEW_OLD: OVERVIEW_NEW,
+              "One idea with enough range to keep moving": "One product. More reasons to choose it.",
+              "Campaign platform": "Product Audit",
+              "A strategic territory built around the audience, moment and business objective.": "We review the existing item, its price point, presentation, materials and role within the museum-shop assortment to identify where meaningful improvements can be made.",
+              "Creative concept": "Creative Upgrade",
+              "A memorable organizing idea with a clear verbal and visual expression.": "Shape, artwork, colour, proportions and details can be refined while preserving the recognisable character of the original product.",
+              "Channel design": "Materials &amp; Technology",
+              "The idea adapted to paid, owned, social, environmental and sales contexts.": "We explore production techniques that can add value — from layered construction, embossing and dimensional effects to glitter, metallic finishes, epoxy, holographic elements and new material combinations.",
+              "Content production": "Packaging &amp; Presentation",
+              "Photography, film, motion and copy art-directed as one connected body of work.": "A familiar product can feel completely different through better presentation. We develop cards, blisters, boxes, sleeves, stickers, holograms and gift-ready packaging appropriate to the product and museum environment.",
+              "Launch toolkits": "Cost Engineering",
+              "Flexible templates and guidance that help local teams execute with confidence.": "Every improvement is evaluated against production cost, MOQ, target retail price and required margin. Alternative materials and manufacturing routes allow us to develop a solution that is both visually stronger and commercially competitive.",
+              "Optimization": "Sampling &amp; Production",
+              "Performance signals used to sharpen the work without flattening the idea.": "We move from concept to prototype, review details with the museum, make refinements and manage the transition into scalable production, quality control and delivery.",
+              "Idea": "Analyse",
+              "The memorable thought that connects audience tension to brand value.": "Understand the existing product, its strengths, limitations, price point and opportunities.",
+              "Toolkit": "Reimagine",
+              "The verbal, visual and motion assets that make the idea recognizable.": "Explore new colours, materials, finishes, details, technology and packaging while retaining what makes the product recognisable.",
+              "Rollout": "Prototype",
+              "The sequence of channels and moments that builds cumulative impact.": "Turn selected ideas into tangible product and packaging samples that can be evaluated before committing to volume.",
+              "Measurement": "Optimise &amp; Scale",
+              "The signals that show what is moving and where the work should evolve.": "Refine quality and cost, define the right production route and prepare the upgraded product for competitive manufacturing and repeat orders.",
+          }
+
+          def spans(text, offset=0):
+              out = []
+              for i, ch in enumerate(text):
+                  idx = i + offset
+                  if ch == " ":
+                      out.append(f'<span aria-hidden="true" class="detail-title-space" style="--char-index:{idx}"> </span>')
+                  else:
+                      esc = {"&": "&amp;", "<": "&lt;", ">": "&gt;"}.get(ch, ch)
+                      out.append(f'<span aria-hidden="true" style="--char-index:{idx}">{esc}</span>')
+              return "".join(out)
+
+          changed = []
+          for path in ROOT.rglob("*.html"):
+              text = path.read_text(encoding="utf-8", errors="ignore")
+              original = text
+
+              if path.as_posix().endswith("capabilities/integrated-campaigns.html"):
+                  pat = re.compile(r'(<h1[^>]*aria-label="Integrated Campaigns"[^>]*data-character-reveal[^>]*>).*?(</h1>)', re.S)
+                  def title_repl(m):
+                      opening = m.group(1).replace('aria-label="Integrated Campaigns"', 'aria-label="Product Evolution"')
+                      return opening + spans("Product Evolution") + m.group(2)
+                  text, n = pat.subn(title_repl, text, count=1)
+                  if n != 1:
+                      raise SystemExit(f"Could not rebuild animated Product Evolution title in {path}")
+
+                  pat2 = re.compile(r'(<h2[^>]*aria-label="Inside\. One campaign\. Four moves\."[^>]*data-character-reveal[^>]*>).*?(</h2>)', re.S)
+                  def statement_repl(m):
+                      opening = m.group(1).replace('aria-label="Inside. One campaign. Four moves."', 'aria-label="Inside. One product. Four moves."')
+                      arrow = '<b aria-hidden="true" class="mr-[.13em] font-[450]">↓</b>'
+                      return opening + arrow + spans("One product. Four moves.") + m.group(2)
+                  text, n = pat2.subn(statement_repl, text, count=1)
+                  if n != 1:
+                      raise SystemExit(f"Could not rebuild animated systems statement in {path}")
+
+                  text = text.replace('aria-label="One campaign. Four moves."', 'aria-label="One product. Four moves."')
+                  text = re.sub(r'[^"\']*work-campaign\.webp', '/artifacta-preview/images/agency/product-evolution.webp', text)
+                  text = re.sub(r'[^"\']*work-climate-launch\.webp', '/artifacta-preview/images/agency/product-evolution.webp', text)
+                  text = text.replace("Bold campaign typography installed in an urban environment", "Museum magnet shown before and after a premium product evolution with enhanced finishes and packaging")
+                  text = text.replace("Climate campaign assets staged across a warm architectural landscape", "Museum souvenir product evolution concept showing design, materials, finishes and premium packaging")
+
+              if path.name == "capabilities.html":
+                  text = re.sub(r'[^"\']*work-campaign\.webp', '/artifacta-preview/images/agency/product-evolution.webp', text)
+                  text = text.replace("Bold campaign typography installed in an urban environment", "Museum magnet shown before and after a premium product evolution with enhanced finishes and packaging")
+                  text = text.replace("03 - Campaigns", "03 - Product Evolution")
+
+              for old, new in REPLACEMENTS.items():
+                  text = text.replace(old, new)
+
+              if text != original:
+                  path.write_text(text, encoding="utf-8")
+                  changed.append(str(path.relative_to(ROOT)))
+
+          print("Product Evolution updated:", changed)
+          if "capabilities.html" not in changed:
+              raise SystemExit("Capabilities listing was not updated")
+          if "capabilities/integrated-campaigns.html" not in changed:
+              raise SystemExit("Product Evolution detail page was not updated")
+          PY
+
       - name: Verify preview
         run: |
           test -f site/index.html
+          test -f site/images/agency/product-evolution.webp
           cmp videos/artifacta_hero_loop_v1.mp4 site/videos/artifacta_hero_loop_v1.mp4
           grep -q "artifacta_hero_loop_v1.mp4" site/index.html
-          echo "ARTIFACTA hero replacement ready"
+          grep -q "Product Evolution" site/capabilities.html
+          grep -q "Product Evolution" site/capabilities/integrated-campaigns.html
+          grep -q "product-evolution.webp" site/capabilities.html
+          if grep -q "Integrated Campaigns" site/capabilities.html; then
+            echo "Old Integrated Campaigns text still present in capabilities listing"
+            exit 1
+          fi
+          echo "ARTIFACTA preview ready"
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
