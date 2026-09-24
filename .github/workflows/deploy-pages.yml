@@ -29,14 +29,25 @@ jobs:
         run: |
           rm -rf mirror site
           mkdir -p mirror site
-          wget             --mirror             --page-requisites             --convert-links             --adjust-extension             --no-parent             --execute robots=off             --user-agent="Mozilla/5.0"             https://axial-theme.pages.dev/             -P mirror
+          wget \
+            --mirror \
+            --page-requisites \
+            --convert-links \
+            --adjust-extension \
+            --no-parent \
+            --execute robots=off \
+            --user-agent="Mozilla/5.0" \
+            https://axial-theme.pages.dev/ \
+            -P mirror
           cp -a mirror/axial-theme.pages.dev/. site/
           touch site/.nojekyll
 
-      - name: Copy original ARTIFACTA hero video
+      - name: Copy ARTIFACTA assets
         run: |
-          mkdir -p site/videos
+          mkdir -p site/videos site/images/agency
           cp videos/artifacta_hero_loop_v1.mp4 site/videos/artifacta_hero_loop_v1.mp4
+          cp custom/product-evolution-hero.webp site/images/agency/product-evolution-hero.webp
+          cp custom/product-evolution-overview.webp site/images/agency/product-evolution-overview.webp
           cmp videos/artifacta_hero_loop_v1.mp4 site/videos/artifacta_hero_loop_v1.mp4
 
       - name: Replace Axial hero with ARTIFACTA hero
@@ -46,35 +57,37 @@ jobs:
           import re
 
           new_video = "/artifacta-preview/videos/artifacta_hero_loop_v1.mp4"
-
           replacements = 0
           for path in Path("site").rglob("*.html"):
               text = path.read_text(encoding="utf-8", errors="ignore")
               original = text
-
-              # wget converts the original absolute Axial asset URLs into local
-              # relative paths, so replace by filename rather than exact URL.
               text = re.sub(
                   r'[^"\']*agency-hero-motion-v3\.mp4',
                   new_video,
                   text,
               )
-
               if text != original:
                   replacements += 1
                   path.write_text(text, encoding="utf-8")
 
-          print(f"Updated hero assets in {replacements} HTML file(s)")
           if replacements == 0:
               raise SystemExit("No Axial hero asset references were found")
           PY
 
+      - name: Apply Product Evolution v2
+        run: python scripts/patch_product_evolution.py
+
       - name: Verify preview
         run: |
           test -f site/index.html
-          cmp videos/artifacta_hero_loop_v1.mp4 site/videos/artifacta_hero_loop_v1.mp4
+          test -f site/images/agency/product-evolution-hero.webp
+          test -f site/images/agency/product-evolution-overview.webp
           grep -q "artifacta_hero_loop_v1.mp4" site/index.html
-          echo "ARTIFACTA hero replacement ready"
+          grep -q "Product Evolution" site/capabilities.html
+          grep -q "Product Evolution" site/capabilities/integrated-campaigns.html
+          grep -q "product-evolution-hero.webp" site/capabilities/integrated-campaigns.html
+          grep -q "product-evolution-overview.webp" site/capabilities/integrated-campaigns.html
+          echo "ARTIFACTA Product Evolution preview ready"
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
