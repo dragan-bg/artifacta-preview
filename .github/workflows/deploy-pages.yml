@@ -48,6 +48,8 @@ jobs:
           cp videos/artifacta_hero_loop_v1.mp4 site/videos/artifacta_hero_loop_v1.mp4
           cp custom/product-evolution-hero.webp site/images/agency/product-evolution-hero.webp
           cp custom/product-evolution-overview.webp site/images/agency/product-evolution-overview.webp
+          cp custom/low-risk-retail-hero.webp site/images/agency/low-risk-retail-hero.webp
+          cp custom/low-risk-retail-overview.webp site/images/agency/low-risk-retail-overview.webp
           cmp videos/artifacta_hero_loop_v1.mp4 site/videos/artifacta_hero_loop_v1.mp4
 
       - name: Replace Axial hero with ARTIFACTA hero
@@ -77,17 +79,26 @@ jobs:
       - name: Apply Product Evolution v2
         run: python scripts/patch_product_evolution.py
 
+      - name: Apply Low-Risk Retail Pilot
+        run: python scripts/patch_low_risk_retail.py
+
       - name: Verify preview
         run: |
           test -f site/index.html
           test -f site/images/agency/product-evolution-hero.webp
           test -f site/images/agency/product-evolution-overview.webp
+          test -f site/images/agency/low-risk-retail-hero.webp
+          test -f site/images/agency/low-risk-retail-overview.webp
           grep -q "artifacta_hero_loop_v1.mp4" site/index.html
           grep -q "Product Evolution" site/capabilities.html
           grep -q "Product Evolution" site/capabilities/integrated-campaigns.html
           grep -q "product-evolution-hero.webp" site/capabilities/integrated-campaigns.html
           grep -q "product-evolution-overview.webp" site/capabilities/integrated-campaigns.html
-          echo "ARTIFACTA Product Evolution preview ready"
+          grep -q "Low-Risk Retail Pilot" site/capabilities.html
+          grep -q "Low-Risk Retail Pilot" site/capabilities/digital-products.html
+          grep -q "low-risk-retail-hero.webp" site/capabilities/digital-products.html
+          grep -q "low-risk-retail-overview.webp" site/capabilities/digital-products.html
+          echo "ARTIFACTA preview ready"
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
