@@ -1,4 +1,4 @@
-name: Deploy ARTIFACTA preview
+name: Deploy ARTIFACTA compiled preview
 
 on:
   push:
@@ -11,111 +11,22 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: pages
   cancel-in-progress: true
 
 jobs:
-  mirror-and-deploy:
+  deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Mirror clean Axial demo
-        run: |
-          rm -rf mirror site
-          mkdir -p mirror site
-          wget \
-            --mirror \
-            --page-requisites \
-            --convert-links \
-            --adjust-extension \
-            --no-parent \
-            --execute robots=off \
-            --user-agent="Mozilla/5.0" \
-            https://axial-theme.pages.dev/ \
-            -P mirror
-          cp -a mirror/axial-theme.pages.dev/. site/
-          touch site/.nojekyll
-
-      - name: Copy ARTIFACTA assets
-        run: |
-          mkdir -p site/videos site/images/agency
-          cp videos/artifacta_hero_loop_v1.mp4 site/videos/artifacta_hero_loop_v1.mp4
-          cp custom/product-evolution-hero.webp site/images/agency/product-evolution-hero.webp
-          cp custom/product-evolution-overview.webp site/images/agency/product-evolution-overview.webp
-          cp custom/low-risk-retail-hero.webp site/images/agency/low-risk-retail-hero.webp
-          cp custom/low-risk-retail-overview.webp site/images/agency/low-risk-retail-overview.webp
-          cp custom/retail-concepts-hero.webp site/images/agency/retail-concepts-hero.webp
-          cp custom/retail-concepts-overview.webp site/images/agency/retail-concepts-overview.webp
-          cmp videos/artifacta_hero_loop_v1.mp4 site/videos/artifacta_hero_loop_v1.mp4
-
-      - name: Replace Axial hero with ARTIFACTA hero
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import re
-
-          new_video = "/artifacta-preview/videos/artifacta_hero_loop_v1.mp4"
-          replacements = 0
-          for path in Path("site").rglob("*.html"):
-              text = path.read_text(encoding="utf-8", errors="ignore")
-              original = text
-              text = re.sub(
-                  r'[^"\']*agency-hero-motion-v3\.mp4',
-                  new_video,
-                  text,
-              )
-              if text != original:
-                  replacements += 1
-                  path.write_text(text, encoding="utf-8")
-
-          if replacements == 0:
-              raise SystemExit("No Axial hero asset references were found")
-          PY
-
-      - name: Apply Product Evolution v2
-        run: python scripts/patch_product_evolution.py
-
-      - name: Apply Low-Risk Retail Pilot
-        run: python scripts/patch_low_risk_retail.py
-
-      - name: Apply Retail Concepts and Impulse Design
-        run: python scripts/patch_retail_concepts.py
-
-      - name: Verify preview
-        run: |
-          test -f site/index.html
-          test -f site/images/agency/product-evolution-hero.webp
-          test -f site/images/agency/product-evolution-overview.webp
-          test -f site/images/agency/low-risk-retail-hero.webp
-          test -f site/images/agency/low-risk-retail-overview.webp
-          test -f site/images/agency/retail-concepts-hero.webp
-          test -f site/images/agency/retail-concepts-overview.webp
-          grep -q "artifacta_hero_loop_v1.mp4" site/index.html
-          grep -q "Product Evolution" site/capabilities.html
-          grep -q "Low-Risk Retail Pilot" site/capabilities.html
-          grep -q "Retail Concepts &amp; Impulse Design" site/capabilities.html
-          grep -q "Retail Concepts &amp; Impulse Design" site/capabilities/brand-strategy.html
-          grep -q "retail-concepts-hero.webp" site/capabilities/brand-strategy.html
-          grep -q "retail-concepts-overview.webp" site/capabilities/brand-strategy.html
-          grep -q "One collection. Four moves." site/capabilities/brand-strategy.html
-          echo "ARTIFACTA preview ready"
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
+      - uses: actions/checkout@v6
+      - uses: actions/configure-pages@v5
         with:
           enablement: true
-
-      - name: Upload site
-        uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: site
-
-      - name: Deploy
-        id: deployment
+      - id: deployment
         uses: actions/deploy-pages@v4

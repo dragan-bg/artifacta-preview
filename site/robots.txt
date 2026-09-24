@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://dragan-bg.github.io/artifacta-preview/sitemap-index.xml
