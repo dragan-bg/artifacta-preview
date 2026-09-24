@@ -24,12 +24,13 @@ jobs:
       - uses: actions/checkout@v6
       - name: Restore verified Retail Concepts images
         run: |
-          cat encoded/retail-concepts-hero/*.b64 | base64 -d > site/custom/retail-concepts-hero.webp
-          cat encoded/retail-concepts-overview/*.b64 | base64 -d > site/custom/retail-concepts-overview.webp
-          file site/custom/retail-concepts-hero.webp
-          file site/custom/retail-concepts-overview.webp
-          test -s site/custom/retail-concepts-hero.webp
-          test -s site/custom/retail-concepts-overview.webp
+          cat encoded/retail-concepts-hero/*.b64 | base64 -d > site/custom/retail-concepts-hero-v2.webp
+          cat encoded/retail-concepts-overview/*.b64 | base64 -d > site/custom/retail-concepts-overview-v2.webp
+          find site -name '*.html' -type f -exec sed -i 's/retail-concepts-hero\.webp/retail-concepts-hero-v2.webp/g; s/retail-concepts-overview\.webp/retail-concepts-overview-v2.webp/g' {} +
+          file site/custom/retail-concepts-hero-v2.webp
+          file site/custom/retail-concepts-overview-v2.webp
+          test -s site/custom/retail-concepts-hero-v2.webp
+          test -s site/custom/retail-concepts-overview-v2.webp
 
       - uses: actions/configure-pages@v5
         with:
