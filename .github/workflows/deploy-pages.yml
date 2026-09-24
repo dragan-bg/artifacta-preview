@@ -22,6 +22,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - name: Restore verified Retail Concepts images
+        run: |
+          cat encoded/retail-concepts-hero/*.b64 | base64 -d > site/custom/retail-concepts-hero.webp
+          cat encoded/retail-concepts-overview/*.b64 | base64 -d > site/custom/retail-concepts-overview.webp
+          file site/custom/retail-concepts-hero.webp
+          file site/custom/retail-concepts-overview.webp
+          test -s site/custom/retail-concepts-hero.webp
+          test -s site/custom/retail-concepts-overview.webp
+
       - uses: actions/configure-pages@v5
         with:
           enablement: true
