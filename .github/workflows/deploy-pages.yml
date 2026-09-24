@@ -50,6 +50,8 @@ jobs:
           cp custom/product-evolution-overview.webp site/images/agency/product-evolution-overview.webp
           cp custom/low-risk-retail-hero.webp site/images/agency/low-risk-retail-hero.webp
           cp custom/low-risk-retail-overview.webp site/images/agency/low-risk-retail-overview.webp
+          cp custom/retail-concepts-hero.webp site/images/agency/retail-concepts-hero.webp
+          cp custom/retail-concepts-overview.webp site/images/agency/retail-concepts-overview.webp
           cmp videos/artifacta_hero_loop_v1.mp4 site/videos/artifacta_hero_loop_v1.mp4
 
       - name: Replace Axial hero with ARTIFACTA hero
@@ -82,6 +84,9 @@ jobs:
       - name: Apply Low-Risk Retail Pilot
         run: python scripts/patch_low_risk_retail.py
 
+      - name: Apply Retail Concepts and Impulse Design
+        run: python scripts/patch_retail_concepts.py
+
       - name: Verify preview
         run: |
           test -f site/index.html
@@ -89,15 +94,16 @@ jobs:
           test -f site/images/agency/product-evolution-overview.webp
           test -f site/images/agency/low-risk-retail-hero.webp
           test -f site/images/agency/low-risk-retail-overview.webp
+          test -f site/images/agency/retail-concepts-hero.webp
+          test -f site/images/agency/retail-concepts-overview.webp
           grep -q "artifacta_hero_loop_v1.mp4" site/index.html
           grep -q "Product Evolution" site/capabilities.html
-          grep -q "Product Evolution" site/capabilities/integrated-campaigns.html
-          grep -q "product-evolution-hero.webp" site/capabilities/integrated-campaigns.html
-          grep -q "product-evolution-overview.webp" site/capabilities/integrated-campaigns.html
           grep -q "Low-Risk Retail Pilot" site/capabilities.html
-          grep -q "Low-Risk Retail Pilot" site/capabilities/digital-products.html
-          grep -q "low-risk-retail-hero.webp" site/capabilities/digital-products.html
-          grep -q "low-risk-retail-overview.webp" site/capabilities/digital-products.html
+          grep -q "Retail Concepts &amp; Impulse Design" site/capabilities.html
+          grep -q "Retail Concepts &amp; Impulse Design" site/capabilities/brand-strategy.html
+          grep -q "retail-concepts-hero.webp" site/capabilities/brand-strategy.html
+          grep -q "retail-concepts-overview.webp" site/capabilities/brand-strategy.html
+          grep -q "One collection. Four moves." site/capabilities/brand-strategy.html
           echo "ARTIFACTA preview ready"
 
       - name: Setup Pages
